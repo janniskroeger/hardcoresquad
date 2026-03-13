@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,7 +22,7 @@ public class HcCommand implements CommandExecutor, TabCompleter {
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (args.length == 0) {
-      sender.sendMessage(PREFIX + "Verwendung: §e/hc <start|status|reset>");
+      sender.sendMessage(PREFIX + "Verwendung: §e/hc <start|status|reset|hardreset>");
       return true;
     }
 
@@ -29,8 +30,9 @@ public class HcCommand implements CommandExecutor, TabCompleter {
     switch (subCommand) {
       case "start" -> handleStart(sender, args);
       case "status" -> runManager.sendStatus(sender);
-      case "reset" -> handleReset(sender);
-      default -> sender.sendMessage(PREFIX + "§cUnbekannter Unterbefehl.§7 Nutze §e/hc <start|status|reset>");
+      case "reset" -> handleReset(sender, args);
+      case "hardreset" -> handleHardReset(sender);
+      default -> sender.sendMessage(PREFIX + "§cUnbekannter Unterbefehl.§7 Nutze §e/hc <start|status|reset|hardreset>");
     }
 
     return true;
@@ -64,7 +66,7 @@ public class HcCommand implements CommandExecutor, TabCompleter {
     sender.sendMessage(PREFIX + "§aRun erfolgreich gestartet.");
   }
 
-  private void handleReset(CommandSender sender) {
+  private void handleReset(CommandSender sender, String[] args) {
     if (!sender.hasPermission("hardcoreteam.admin")) {
       sender.sendMessage(PREFIX + "§cDafür hast du keine Berechtigung.");
       return;
@@ -75,7 +77,31 @@ public class HcCommand implements CommandExecutor, TabCompleter {
       return;
     }
 
+    if (args.length >= 2) {
+      if ("hard".equalsIgnoreCase(args[1])) {
+        runManager.executeHardReset(sender);
+        return;
+      }
+
+      sender.sendMessage(PREFIX + "Verwendung: §e/hc reset [hard]");
+      return;
+    }
+
     runManager.executeReset(sender);
+  }
+
+  private void handleHardReset(CommandSender sender) {
+    if (!sender.hasPermission("hardcoreteam.admin")) {
+      sender.sendMessage(PREFIX + "§cDafür hast du keine Berechtigung.");
+      return;
+    }
+
+    if (!runManager.canReset()) {
+      sender.sendMessage(runManager.getCannotResetReason());
+      return;
+    }
+
+    runManager.executeHardReset(sender);
   }
 
   @Override
@@ -85,8 +111,15 @@ public class HcCommand implements CommandExecutor, TabCompleter {
       suggestions.add("start");
       suggestions.add("status");
       suggestions.add("reset");
+      suggestions.add("hardreset");
       return suggestions.stream()
           .filter(entry -> entry.startsWith(args[0].toLowerCase(Locale.ROOT)))
+          .toList();
+    }
+
+    if (args.length == 2 && "reset".equalsIgnoreCase(args[0]) && sender.hasPermission("hardcoreteam.admin")) {
+      return Stream.of("hard")
+          .filter(entry -> entry.startsWith(args[1].toLowerCase(Locale.ROOT)))
           .toList();
     }
 

@@ -30,7 +30,7 @@ public class WorldResetService {
   private boolean resetInProgress;
 
 
-  public void initiateReset(CommandSender sender) {
+  public void initiateReset(CommandSender sender, Runnable onResetConfirmed) {
     if (resetInProgress) {
       sender.sendMessage(PREFIX + "Ein Welt-Reset läuft bereits.");
       return;
@@ -52,7 +52,7 @@ public class WorldResetService {
       player.kickPlayer("§cDie Welt wird zurückgesetzt. Bitte verbinde dich nach dem Neustart erneut.");
     }
 
-    Bukkit.getScheduler().runTaskLater(plugin, () -> unloadDeleteAndShutdown(worldsToReset), 20L);
+    Bukkit.getScheduler().runTaskLater(plugin, () -> unloadDeleteAndShutdown(worldsToReset, onResetConfirmed), 20L);
   }
 
   private List<String> resolveWorldNames() {
@@ -71,7 +71,7 @@ public class WorldResetService {
     names.add(worldName);
   }
 
-  private void unloadDeleteAndShutdown(List<String> worldsToReset) {
+  private void unloadDeleteAndShutdown(List<String> worldsToReset, Runnable onResetConfirmed) {
     String primaryWorldName = Bukkit.getWorlds().isEmpty() ? "world" : Bukkit.getWorlds().getFirst().getName();
     boolean unloadFailed = false;
 
@@ -104,6 +104,10 @@ public class WorldResetService {
       Bukkit.broadcastMessage(PREFIX + "§cReset fehlgeschlagen: Externer Löschprozess konnte nicht gestartet werden.");
       resetInProgress = false;
       return;
+    }
+
+    if (onResetConfirmed != null) {
+      onResetConfirmed.run();
     }
 
     Bukkit.broadcastMessage(PREFIX + "§aWelt-Reset geplant.§7 Server wird heruntergefahren...");
@@ -141,26 +145,6 @@ public class WorldResetService {
       plugin.getLogger().severe("Konnte externen Löschprozess nicht starten: " + exception.getMessage());
       return false;
     }
-  }
-
-  private void deleteDirectory(Path path) throws IOException {
-    if (!Files.exists(path)) {
-      return;
-    }
-
-    Files.walkFileTree(path, new SimpleFileVisitor<>() {
-      @Override
-      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        Files.deleteIfExists(file);
-        return FileVisitResult.CONTINUE;
-      }
-
-      @Override
-      public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-        Files.deleteIfExists(dir);
-        return FileVisitResult.CONTINUE;
-      }
-    });
   }
 }
 

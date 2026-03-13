@@ -8,6 +8,7 @@ Kooperatives Spigot/Paper Hardcore-Team-Plugin (1 Team, gemeinsame Leben, Milest
 - Milestone-Tracking mit Zeiten
 - Sidebar-Scoreboard mit Run-Statistiken
 - Welt-Reset per `/hc reset`
+- Optionaler Hardreset mit kompletter Historien-Löschung
 
 ## Build
 
@@ -22,6 +23,8 @@ JAR liegt danach in `build/libs/`.
 - `/hc start <lives>`
 - `/hc status`
 - `/hc reset`
+- `/hc reset hard`
+- `/hc hardreset`
 
 Permission: `hardcoreteam.admin`
 

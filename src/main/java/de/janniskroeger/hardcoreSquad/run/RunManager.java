@@ -389,8 +389,11 @@ public class RunManager {
   }
 
   public void executeReset(CommandSender sender) {
-    prepareStateForFreshRun();
-    worldResetService.initiateReset(sender);
+    worldResetService.initiateReset(sender, () -> prepareStateForFreshRun(false));
+  }
+
+  public void executeHardReset(CommandSender sender) {
+    worldResetService.initiateReset(sender, () -> prepareStateForFreshRun(true));
   }
 
   public boolean canReset() {
@@ -735,13 +738,20 @@ public class RunManager {
         milestoneDurations));
   }
 
-  private void prepareStateForFreshRun() {
+  private void prepareStateForFreshRun(boolean clearHistory) {
     cancelAllRespawnTasks();
     runState = RunState.PRESTART;
     teamLives = 0;
     runStartTimestamp = 0L;
     runEndTimestamp = 0L;
     milestoneDurations.clear();
+
+    if (clearHistory) {
+      lastRunDurationMillis = 0L;
+      attemptCount = 0;
+      playerDeathCounts.clear();
+    }
+
     saveState();
     refreshScoreboard();
   }
