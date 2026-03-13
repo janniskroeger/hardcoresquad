@@ -52,6 +52,7 @@ public class RunManager {
   private final EnumMap<Milestone, Long> milestoneDurations = new EnumMap<>(Milestone.class);
   private final Set<UUID> pendingRespawns = new HashSet<>();
   private final Map<UUID, BukkitTask> respawnTasks = new HashMap<>();
+  private final Map<UUID, Location> pendingDeathLocations = new HashMap<>();
   private final Map<UUID, Location> pendingRespawnLocations = new HashMap<>();
 
   @Setter
@@ -170,6 +171,7 @@ public class RunManager {
 
     Player player = event.getEntity();
     UUID playerId = player.getUniqueId();
+    Location deathLocation = player.getLocation().clone();
 
     // Close the death screen automatically so players enter spectator flow immediately.
     Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -180,6 +182,7 @@ public class RunManager {
 
     pendingRespawns.add(playerId);
     cancelRespawnTask(playerId);
+    pendingDeathLocations.put(playerId, deathLocation);
 
     event.setKeepInventory(true);
     event.setKeepLevel(true);
@@ -218,6 +221,10 @@ public class RunManager {
 
     if (runState == RunState.RUNNING && pendingRespawns.contains(playerId)) {
       pendingRespawnLocations.put(playerId, event.getRespawnLocation().clone());
+      Location deathLocation = pendingDeathLocations.get(playerId);
+      if (deathLocation != null) {
+        event.setRespawnLocation(deathLocation.clone());
+      }
     }
 
     Bukkit.getScheduler().runTask(plugin, () -> {
@@ -431,11 +438,13 @@ public class RunManager {
 
     if (alivePlayers.isEmpty()) {
       if (!isSoloRespawnScenario(playerId)) {
+        pendingDeathLocations.remove(playerId);
         pendingRespawnLocations.remove(playerId);
         enterGameOver("Es ist kein lebender Spieler mehr übrig.");
         return;
       }
 
+      pendingDeathLocations.remove(playerId);
       Location respawnLocation = pendingRespawnLocations.remove(playerId);
       if (respawnLocation != null) {
         player.teleport(respawnLocation);
@@ -459,6 +468,7 @@ public class RunManager {
     }
 
     Player target = alivePlayers.get(random.nextInt(alivePlayers.size()));
+    pendingDeathLocations.remove(playerId);
     pendingRespawnLocations.remove(playerId);
     player.teleport(target.getLocation());
     player.setGameMode(GameMode.SURVIVAL);
@@ -559,6 +569,7 @@ public class RunManager {
     }
     respawnTasks.clear();
     pendingRespawns.clear();
+    pendingDeathLocations.clear();
     pendingRespawnLocations.clear();
   }
 
