@@ -1,0 +1,27 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "./gradlew clean build -PreleaseVersion=${nextRelease.version}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "build/libs/*.jar",
+            "label": "HardcoreSquad Plugin JAR"
+          }
+        ]
+      }
+    ]
+  ]
+}
+

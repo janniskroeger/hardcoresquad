@@ -1,0 +1,13 @@
+name: HardcoreSquad
+version: '${version}'
+main: de.janniskroeger.hardcoreSquad.HardcoreSquad
+api-version: '1.21'
+authors: [ janniskroeger ]
+commands:
+  hc:
+    description: Hauptbefehl für den Hardcore-Team-Run
+    usage: /hc <start|status|reset>
+permissions:
+  hardcoreteam.admin:
+    description: Erlaubt Start und Reset des Hardcore-Team-Runs
+    default: op
